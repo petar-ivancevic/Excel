@@ -1,0 +1,295 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                    GENERATION REVIEW WORKFLOW                                ║
+║                         QUICK REFERENCE CARD                                 ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ INSTALLATION (One-Time Setup)                                               │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  1. PATCH MATRIXLAYOUT MODULE
+     Alt+F11 → Find "VBA Script_MatrixLayout_PATCHED" module
+     → Change line ~227: "Private Sub BuildJurisdictionSheet" to "Public Sub"
+     → Change line ~280: "Private Sub BuildIndexHeader" to "Public Sub"
+
+  2. IMPORT NEW MODULE
+     Alt+F11 → File → Import → Select "modGenerationReview.bas"
+
+  3. VERIFY
+     Debug → Compile VBAProject (should have no errors)
+
+  4. ASSIGN BUTTONS
+     Right-click button 1 → Assign Macro → "PopulateGenerationReview"
+     Right-click button 2 → Assign Macro → "GenerateAuditorWorkbooks_FromReview"
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ WORKFLOW (Daily Use)                                                         │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  STEP 1: POPULATE REVIEW TABLE
+  ┌─────────────────────────────────────────┐
+  │ Click [1. Populate Review]              │
+  │    ↓                                    │
+  │ tblEntities → tblGenerationReview       │
+  │    ↓                                    │
+  │ Message: "N assignment(s) populated"    │
+  └─────────────────────────────────────────┘
+
+  STEP 2: REVIEW & EDIT (Manual)
+  ┌─────────────────────────────────────────┐
+  │ Check: GCI, AuditorID, Jurisdiction ID  │
+  │ Edit: Reassign auditors, fix errors     │
+  │ Delete: Rows to exclude from generation │
+  │ Add: New rows manually (optional)       │
+  └─────────────────────────────────────────┘
+
+  STEP 3: GENERATE WORKBOOKS
+  ┌─────────────────────────────────────────┐
+  │ Click [2. Generate Workbooks]           │
+  │    ↓                                    │
+  │ Confirm: "Generate from review table?"  │
+  │    ↓                                    │
+  │ Output: One .xlsx per AuditorID         │
+  │    ↓                                    │
+  │ Message: "N workbook(s) generated"      │
+  └─────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ DATA FLOW                                                                    │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  tblEntities (source, never modified)
+      ↓
+      ↓ [PopulateGenerationReview]
+      ↓
+  tblGenerationReview (editable)
+      ├── GCI
+      ├── Legal Name
+      ├── Jurisdiction ID
+      ├── Jurisdiction
+      ├── AuditorID
+      └── Auditor Name
+      ↓
+      ↓ [User reviews/edits]
+      ↓
+      ↓ [GenerateAuditorWorkbooks_FromReview]
+      ↓
+  Output\KYC_Workpapers_<BatchID>_<AuditorID>.xlsx
+      ├── Index sheet
+      ├── ENT sheet
+      └── Jurisdiction sheets (one per unique Jurisdiction ID)
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ REQUIRED COMPONENTS                                                          │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  TABLES:
+  ✓ tblEntities           (source data with GCI, AuditorID, Jurisdiction ID)
+  ✓ tblGenerationReview   (review table on "Generation Review" sheet)
+  ✓ tblAttributes         (attribute definitions for matrix)
+  ✓ tblAcceptableDocs     (document validation lists)
+
+  NAMED RANGES:
+  ✓ rngBatchID            (single cell with batch identifier)
+  ✓ rngOutputFolder       (single cell with output folder path)
+
+  SHEETS:
+  ✓ Generation Review     (contains tblGenerationReview and status labels)
+
+  LABELS (optional but recommended):
+  ✓ "Generator Status"    (shows current status)
+  ✓ "Last Refresh"        (shows last populate timestamp)
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ COLUMN MAPPING                                                               │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  tblEntities               →    tblGenerationReview
+  ─────────────────────────────────────────────────────────────────────────────
+  GCI                       →    GCI                      (key, required)
+  Legal Entity Name         →    Legal Name               (display only)
+  Jurisdiction ID           →    Jurisdiction ID          (key, required)
+  Jurisdiction Name         →    Jurisdiction             (display only)
+  AuditorID                 →    AuditorID                (key, required)
+  Auditor Name              →    Auditor Name             (optional)
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ KEYBOARD SHORTCUTS                                                           │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  Alt+F8              Open Macros dialog (run macros manually)
+  Alt+F11             Open VBA Editor
+  Ctrl+G              Show Immediate Window (view debug log)
+  F5                  Run current macro (in VBA Editor)
+  Ctrl+Break          Stop running macro
+  Ctrl+S              Save workbook
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ TROUBLESHOOTING (Quick Fixes)                                                │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  ISSUE: "Table 'tblGenerationReview' not found"
+  FIX:   Create table on "Generation Review" sheet with required columns
+
+  ISSUE: "Source table missing columns: [list]"
+  FIX:   Add missing columns to tblEntities or rename existing ones
+
+  ISSUE: "No valid assignments found in review table"
+  FIX:   Run PopulateGenerationReview first, then check for blank key fields
+
+  ISSUE: "Compile error" when running macro
+  FIX:   Apply MatrixLayout patch (make 2 functions Public)
+
+  ISSUE: Generated workbook is empty
+  FIX:   Check tblAttributes has rows for the Jurisdiction IDs in review table
+
+  ISSUE: "Named range not found: rngBatchID"
+  FIX:   Create named range: Select cell → Name Box → type "rngBatchID" → Enter
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ DEBUG LOGGING                                                                │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  VIEW REAL-TIME LOG:
+  1. Open VBA Editor (Alt+F11)
+  2. Press Ctrl+G to show Immediate Window
+  3. Run macro and watch messages appear
+
+  VIEW PERSISTENT LOG:
+  1. Find "_Log" sheet in workbook
+  2. Review Timestamp and Message columns
+  3. Filter/sort to find specific events
+
+  EXAMPLE LOG:
+  14:35:22 | [Review] === PopulateGenerationReview START ===
+  14:35:22 | [Review] Source data loaded: 150 rows
+  14:35:23 | [Review] WriteToReviewTable: Wrote 150 rows
+  14:35:23 | [Review] === PopulateGenerationReview COMPLETE ===
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ VALIDATION TESTS                                                             │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  ☐ Test 1: Basic Populate
+    Run PopulateGenerationReview → verify review table populated
+
+  ☐ Test 2: Preserve Edits
+    Edit row → run PopulateGenerationReview → verify edit preserved
+
+  ☐ Test 3: Force Refresh
+    Run PopulateGenerationReview(ForceRefresh:=True) → verify edits lost
+
+  ☐ Test 4: Exclude Entity
+    Delete row → generate → verify entity excluded
+
+  ☐ Test 5: Reassign Auditor
+    Change AuditorID → generate → verify new assignment
+
+  ☐ Test 6: Invalid Data
+    Clear AuditorID → generate → verify graceful skip
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ EXPECTED OUTPUT                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  FILE STRUCTURE:
+  Output\
+    ├── KYC_Workpapers_BATCH_2025_001_A001.xlsx
+    │   ├── Index (metadata: AuditorID, Batch, Generated date)
+    │   ├── ENT (all entities assigned to this auditor)
+    │   ├── CA (California jurisdiction sheet)
+    │   ├── NY (New York jurisdiction sheet)
+    │   └── TX (Texas jurisdiction sheet)
+    │
+    ├── KYC_Workpapers_BATCH_2025_001_A002.xlsx
+    └── KYC_Workpapers_BATCH_2025_001_A003.xlsx
+
+  SHEET STRUCTURE (jurisdiction sheets):
+  Row 1-3: Header (Auditor, Jurisdiction, Batch)
+  Row 5:   GCI columns (one per entity)
+  Row 7:   Attribute headers (Source File, Attribute ID, Name, etc.)
+  Row 8+:  Matrix (attributes × GCIs with data validation dropdowns)
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ ADVANCED FEATURES                                                            │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  FORCE REFRESH (overwrites all edits):
+  Method 1: Edit button macro to call PopulateGenerationReview(ForceRefresh:=True)
+  Method 2: Run from Immediate Window: PopulateGenerationReview True
+
+  INCREMENTAL UPDATE (preserves edits):
+  Default behavior - just run PopulateGenerationReview normally
+  Existing GCIs keep their values, new GCIs are added
+
+  MANUAL ROW ADDITION:
+  1. Add row to tblGenerationReview
+  2. Fill required fields: GCI, AuditorID, Jurisdiction ID
+  3. Optional fields: Legal Name, Jurisdiction, Auditor Name
+  4. Run GenerateAuditorWorkbooks_FromReview
+
+  EXCLUDE ENTITIES:
+  1. Delete rows from tblGenerationReview
+  2. Run GenerateAuditorWorkbooks_FromReview
+  3. Deleted entities won't appear in output
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ SUPPORT RESOURCES                                                            │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  DOCUMENTATION:
+  • GENERATION_REVIEW_RUNBOOK.md      (Complete user guide - 30+ pages)
+  • GENERATION_REVIEW_SUMMARY.md      (Implementation summary)
+  • MatrixLayout_PATCH_FOR_REVIEW.txt (Patch instructions)
+  • QUICK_REFERENCE.txt               (This file)
+
+  DIAGNOSTICS:
+  • Ctrl+G in VBA Editor              (Immediate Window - real-time log)
+  • _Log sheet                        (Persistent log with timestamps)
+  • Debug.Print statements            (Throughout code for tracing)
+
+  FILES:
+  • modGenerationReview.bas           (New module to import)
+  • VBA Script_MatrixLayout_PATCHED.vb (Must be patched with Public functions)
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ MODULE FUNCTIONS                                                             │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  PUBLIC (user-facing):
+  • PopulateGenerationReview([ForceRefresh])
+    Load assignments from tblEntities into review table
+
+  • GenerateAuditorWorkbooks_FromReview()
+    Generate workbooks from review table (not tblEntities)
+
+  PRIVATE (internal):
+  • BuildAuditorMapFromReview()       Build auditorMap structure
+  • BuildExistingReviewMap()          Preserve user edits
+  • WriteToReviewTable()              Fast bulk write
+  • UpdateReviewMetadata()            Update status cells
+  • UpdateGenerationStatus()          Update after generation
+  • BuildIndexMap()                   Column name → index mapping
+  • GetTableSafe()                    Safe table lookup
+  • GetCellValue()                    Safe column access
+  • ... (and other helpers)
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ SUCCESS CRITERIA                                                             │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+  ✓ PopulateGenerationReview runs without errors
+  ✓ Review table populated with correct row count
+  ✓ "Last Refresh" updated with current timestamp
+  ✓ Manual edits preserved on subsequent populate (unless force)
+  ✓ GenerateAuditorWorkbooks_FromReview runs without errors
+  ✓ One .xlsx file per unique AuditorID in review table
+  ✓ Each workbook has Index + ENT + jurisdiction sheets
+  ✓ Matrix populated with attributes and DV dropdowns
+  ✓ "Generator Status" updated after generation
+  ✓ Output files match original generator format
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║ For detailed information, see GENERATION_REVIEW_RUNBOOK.md                  ║
+║ Version: 1.0  |  Date: 2025-12-19  |  Support: Check Immediate Window      ║
+╚══════════════════════════════════════════════════════════════════════════════╝

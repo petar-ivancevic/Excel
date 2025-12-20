@@ -1,0 +1,79 @@
+========================================
+MINIMAL PATCH FOR VBA Script_MatrixLayout_PATCHED.vb
+To Support modGenerationReview Module
+========================================
+
+PURPOSE:
+--------
+Make two functions Public so they can be called from modGenerationReview module:
+1. BuildIndexHeader
+2. BuildJurisdictionSheet
+
+INSTRUCTIONS:
+-------------
+Open VBA Script_MatrixLayout_PATCHED.vb in VBA Editor and make these changes:
+
+========================================
+CHANGE #1: BuildIndexHeader
+========================================
+
+FIND (around line 280):
+------------------------
+' FIX: UDT cannot be passed ByVal
+Private Sub BuildIndexHeader(ByVal ws As Worksheet, ByVal auditorID As String, ByRef cfg As GenConfig)
+
+
+REPLACE WITH:
+-------------
+' FIX: UDT cannot be passed ByVal
+' PUBLIC: Called by modGenerationReview
+Public Sub BuildIndexHeader(ByVal ws As Worksheet, ByVal auditorID As String, ByRef cfg As GenConfig)
+
+
+========================================
+CHANGE #2: BuildJurisdictionSheet
+========================================
+
+FIND (around line 227):
+------------------------
+' FIX: UDT cannot be passed ByVal
+Private Sub BuildJurisdictionSheet(ByVal ws As Worksheet, ByVal wsLists As Worksheet, _
+                                  ByVal jurID As String, ByVal jurName As String, _
+                                  ByVal auditorID As String, ByRef cfg As GenConfig, _
+                                  ByVal assigns As Collection, _
+                                  ByVal entRows As Variant, ByVal idxEnt As Object, _
+                                  ByVal attrRows As Variant, ByVal idxAttr As Object, _
+                                  ByVal docRows As Variant, ByVal idxDocs As Object)
+
+
+REPLACE WITH:
+-------------
+' FIX: UDT cannot be passed ByVal
+' PUBLIC: Called by modGenerationReview
+Public Sub BuildJurisdictionSheet(ByVal ws As Worksheet, ByVal wsLists As Worksheet, _
+                                  ByVal jurID As String, ByVal jurName As String, _
+                                  ByVal auditorID As String, ByRef cfg As GenConfig, _
+                                  ByVal assigns As Collection, _
+                                  ByVal entRows As Variant, ByVal idxEnt As Object, _
+                                  ByVal attrRows As Variant, ByVal idxAttr As Object, _
+                                  ByVal docRows As Variant, ByVal idxDocs As Object)
+
+
+========================================
+SUMMARY OF CHANGES:
+========================================
+Line ~227: Change "Private Sub BuildJurisdictionSheet" → "Public Sub BuildJurisdictionSheet"
+Line ~280: Change "Private Sub BuildIndexHeader" → "Public Sub BuildIndexHeader"
+
+THAT'S IT! Only these two keyword changes are needed.
+No other logic changes required.
+
+========================================
+VERIFICATION:
+========================================
+After making changes, verify:
+1. Module compiles without errors (Debug → Compile VBAProject)
+2. Both functions now appear in macro list (Alt+F8) if you're in a different module
+3. modGenerationReview can call these functions
+
+========================================
